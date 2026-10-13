@@ -1,27 +1,38 @@
+# Tuned for an 8 GB laptop. Postgres and Redis are capped; the API container
+# is optional (profile "api") because running it with node directly uses less memory.
 services:
   postgres:
-    image: postgis/postgis:16-3.4
+    # Multi-arch PostGIS build (arm64 + amd64) from the PostGIS docker maintainer.
+    image: ${POSTGIS_IMAGE:-imresamu/postgis:16-3.4-alpine}
     environment:
       POSTGRES_USER: chota
       POSTGRES_PASSWORD: chota
       POSTGRES_DB: chota
-    ports: ["${PG_PORT:-5432}:5432"]
+    command: >
+      postgres -c shared_buffers=128MB -c work_mem=4MB -c maintenance_work_mem=32MB
+      -c effective_cache_size=256MB -c max_connections=50
+    mem_limit: 512m
+    ports: ['${PG_PORT:-5432}:5432']
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U chota"]
+      test: ['CMD-SHELL', 'pg_isready -U chota']
       interval: 3s
       retries: 20
 
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    command: redis-server --maxmemory 64mb --maxmemory-policy noeviction --save ''
+    mem_limit: 128m
+    ports: ['${REDIS_PORT:-6379}:6379']
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 3s
       retries: 20
 
   backend:
+    profiles: [api]
     build: ./backend
+    mem_limit: 256m
     env_file:
       - path: ./backend/.env
         required: false
@@ -30,7 +41,8 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-local-dev-change-me}
       PORT: 4000
-    ports: ["4000:4000"]
+      NODE_OPTIONS: --max-old-space-size=192
+    ports: ['4000:4000']
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
