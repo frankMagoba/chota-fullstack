@@ -8,8 +8,8 @@
  *   API_URL=http://localhost:4000 npm run simulate
  */
 const API = process.env.API_URL ?? 'http://localhost:4000';
-const COUNT = Number(process.env.SIM_DRIVERS ?? 12);
-const TICK_MS = Number(process.env.SIM_TICK_MS ?? 2000);
+const COUNT = Number(process.env.SIM_DRIVERS ?? 6);
+const TICK_MS = Number(process.env.SIM_TICK_MS ?? 3000);
 const STEP_KM = 0.1; // ~180 km/h at a 2s tick. Fast on purpose so a demo doesn't drag.
 
 function phone(i: number) {
