@@ -4,10 +4,10 @@ Setup before the call (2 minutes):
 
 ```bash
 cd ~/Desktop/chota-app
-make up                 # API, Postgres, Redis
+make api                # Postgres + Redis in Docker, API with node
 make simulate           # terminal 2: trucks move
 make app                # terminal 3: Flutter app in Chrome (narrow the window to phone width)
-make web                # terminal 4, optional: ops dashboard on :3001
+make web                # terminal 4, only if you'll show the dashboard
 ```
 
 Have open: Chrome with the app, the dashboard tab, VS Code on `backend/src/services/bookings.ts`, and a terminal in `backend/`.
@@ -64,13 +64,9 @@ Dashboard tab.
 
 "The design doc in `docs/DESIGN.md` covers the architecture and the locking design, plus a table mapping each of your requirements to the code. Next I'd add a driver accept step with re-dispatch, M-Pesa, and road-based ETAs."
 
-## 7. Handing over to Keyhold (15 s)
+## 7. Transition (10 s)
 
-Keep this short and let Keyhold speak for itself:
-
-"So that's Chota, the marketplace side: bookings, real-time, data integrity. The other thing I want to show you is Keyhold, my own project in TypeScript and Node. Let me switch windows."
-
-Then switch to the Keyhold window and use your own walkthrough for it. If they ask how the two relate, a simple answer works: Chota shows product and backend work under load, Keyhold is something you built for yourself from scratch.
+"That's Chota. Next I'll show Keyhold, my own TypeScript project," then switch windows.
 
 ---
 
