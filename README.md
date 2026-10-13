@@ -15,23 +15,43 @@ It's a sanitized example, safe to share on screen. There's no real customer or d
 
 ## Quick start
 
-Needs Docker. Node 20+ for the scripts, Flutter 3.35+ for the app.
+Needs Docker, Node 20+ and Flutter 3.35+.
 
 ```bash
-make up          # postgres, redis, API on :4000 (runs migrations + seed)
-make simulate    # in a second terminal: 12 trucks drive around Lang'ata/Karen
-make app         # in a third: the Flutter app in Chrome
+make api         # Postgres + Redis in Docker, then migrate, seed and run the API on :4000
+make simulate    # second terminal: trucks drive around Lang'ata/Karen
+make app         # third terminal: the Flutter app in Chrome
 make web         # optional: ops dashboard on :3001
 ```
 
-Sign in on the app with the prefilled demo number (`+254711000001`). The ops dashboard uses `+254700000001`. OTP is stubbed for the demo.
+Sign in on the app with the prefilled demo number (`+254711000001`). The ops dashboard uses `+254700000001`. OTP is stubbed for the demo. `make up-docker` runs the API in a container instead.
 
-If port 5432 is already taken by a local Postgres: `PG_PORT=5433 make up` (the API talks to Postgres inside Docker, so only the tests care; run them with `TEST_DATABASE_URL=postgres://chota:chota@localhost:5433/chota_test`).
+If ports 5432 or 6379 are taken by a local Postgres or Redis, use `PG_PORT=5433 REDIS_PORT=6380 make db` and set `DATABASE_URL`/`REDIS_URL` in `backend/.env` to match.
+
+## Running on an 8 GB M1
+
+The default commands are already the lean path. In numbers:
+
+- Postgres runs a multi-arch PostGIS image (native arm64) with `shared_buffers=128MB`, capped at 512 MB. Redis is capped at 128 MB with persistence off.
+- The API runs with node directly, about 100 MB, instead of a third container.
+- The simulator moves 6 trucks every 3 seconds by default.
+- Run the Flutter app once, in Chrome or as a macOS window. Skip the Android emulator and iOS simulator if you can; each one costs 2 GB or more.
+- The Next.js dashboard is optional. Leave it off unless you're showing it.
+
+Lean start, three terminals:
+
+```bash
+make api
+make simulate
+make app
+```
+
+Close Docker Desktop's other containers first, and set Docker Desktop's memory limit to 2 GB (Settings > Resources). That's plenty for this stack.
 
 ### Tests
 
 ```bash
-make up && make test   # unit tests + concurrency tests against real Postgres/Redis
+make test              # lint, typecheck, unit and concurrency tests against real Postgres/Redis
 make race              # 25 simultaneous bookings against the running API
 cd mobile && flutter analyze && flutter test
 ```
