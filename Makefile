@@ -1,30 +1,39 @@
-# One-command local setup. Needs Docker; Flutter only for the app.
-.PHONY: up down logs test simulate race web app reset
+# Default path is lean: Postgres + Redis in Docker, API with node.
+.PHONY: db api up up-docker down reset logs test simulate race web app app-macos
 
-up:            ## Postgres + Redis + API (migrates and seeds on start)
-	docker compose up -d --build
-	@echo "Waiting for API..."; until curl -sf localhost:4000/ready >/dev/null; do sleep 1; done; echo "API ready on http://localhost:4000"
+db:            ## Postgres + Redis only (capped memory)
+	docker compose up -d postgres redis
+	@until docker compose exec -T postgres pg_isready -U chota >/dev/null 2>&1; do sleep 1; done
+
+api: db        ## Migrate, seed and run the API with node on :4000
+	cd backend && npm install --no-audit --no-fund && npm run migrate && npm run seed && npm run dev
+
+up: api
+
+up-docker:     ## Everything in Docker, API included
+	docker compose --profile api up -d --build
+	@until curl -sf localhost:4000/ready >/dev/null; do sleep 1; done; echo "API ready on http://localhost:4000"
 
 down:
-	docker compose down
+	docker compose --profile api down
 
-reset:         ## Drop the database volume and start clean
-	docker compose down -v && $(MAKE) up
+reset:         ## Drop the database volume
+	docker compose --profile api down -v
 
-logs:
-	docker compose logs -f backend
+test: db       ## Backend lint, typecheck, unit + concurrency tests
+	cd backend && npm install --no-audit --no-fund && npm run lint && npm run typecheck && npm test
 
-test:          ## Backend unit + concurrency tests (needs `make up` for Postgres/Redis)
-	cd backend && npm install && npm test
+simulate:      ## 6 trucks, 3s tick (SIM_DRIVERS=12 for all of them)
+	cd backend && SIM_DRIVERS=$${SIM_DRIVERS:-6} SIM_TICK_MS=$${SIM_TICK_MS:-3000} npm run simulate
 
-simulate:      ## Move the seeded trucks and run their jobs
-	cd backend && npm install && npm run simulate
+race:          ## 25 simultaneous bookings against the running API
+	cd backend && npm run race
 
-race:          ## Fire 25 simultaneous bookings at the live API
-	cd backend && npm install && npm run race
-
-web:           ## Ops dashboard on http://localhost:3001
-	cd web && npm install && npm run dev -- -p 3001
+web:           ## Optional ops dashboard on :3001
+	cd web && npm install --no-audit --no-fund && npm run dev -- -p 3001
 
 app:           ## Flutter app in Chrome
 	cd mobile && flutter pub get && flutter run -d chrome
+
+app-macos:     ## Flutter app as a macOS window (needs Xcode)
+	cd mobile && flutter pub get && flutter run -d macos
