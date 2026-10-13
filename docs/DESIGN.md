@@ -166,6 +166,8 @@ sequenceDiagram
 
 Why `SKIP LOCKED` over a pure optimistic approach for assignment: with optimistic versioning, in a surge every request races for the same nearest truck and all but one retry, which turns into a retry storm exactly when load is highest. `SKIP LOCKED` lets each request take the next truck in one pass. I still use optimistic versions for status transitions, where conflicts are rare and a 409 to the client is the right answer.
 
+The Postgres docs warn that `SKIP LOCKED` gives an inconsistent view of the table and is meant for queue-like access. Dispatch is that case: each request needs one free truck, not a consistent snapshot of all of them. The `status = 'available'` filter is re-checked on the locked row, so a truck that went busy after our snapshot is skipped rather than returned.
+
 Lock ordering: inside the transaction we always lock the driver row before the slot row, so two booking transactions can't deadlock on each other. Cancel touches slot then driver, but it only ever locks one driver and one slot that the booking already owns, and no booking transaction can be waiting on a busy driver's row (it filters on `status='available'` and skips locked rows).
 
 ### Proof
@@ -272,7 +274,17 @@ Trust score (0 to 100, `services/trust.ts`)
 7. Redis Streams for booking events so offline clients and push notifications don't miss updates.
 8. Experiment analysis with significance testing and SRM checks.
 
-## 16. JD requirement map
+## 16. References
+
+Sources I leaned on for this design and code:
+
+- PostgreSQL 18 docs, `SELECT`, "The Locking Clause" (`FOR UPDATE`, `SKIP LOCKED`, the ordering caveat under `READ COMMITTED`). https://www.postgresql.org/docs/current/sql-select.html
+- Otavio Santana, *Domain-Driven Design with Java*. The aggregate root idea is why every booking state change goes through `services/bookings.ts` and nowhere else, and why the invariants (one active job per truck, slot never oversold) also live in the schema.
+- Ronald Mak, *Software Design for Python Programmers* (2026). Cohesion and the Principle of Least Knowledge shaped the split into small services with pure functions for pricing, trust and bucketing, so they can be tested without a database.
+- Dart team, *Effective Dart* and the `flutter_lints` rule set, for the app's style; `dart format` and `flutter analyze` run in CI.
+- typescript-eslint recommended rules and Prettier on the backend, with strict TypeScript.
+
+## 17. JD requirement map
 
 | Requirement | Where it lives |
 |---|---|
