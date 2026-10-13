@@ -33,10 +33,10 @@ If ports 5432 or 6379 are taken by a local Postgres or Redis, use `PG_PORT=5433 
 The default commands are already the lean path. In numbers:
 
 - Postgres runs a multi-arch PostGIS image (native arm64) with `shared_buffers=128MB`, capped at 512 MB. Redis is capped at 128 MB with persistence off.
-- The API runs with node directly, about 100 MB, instead of a third container.
-- The simulator moves 6 trucks every 3 seconds by default.
+- Running the API with node directly takes about 80 MB, less than a third container would.
+- By default the simulator moves 6 trucks every 3 seconds.
 - Run the Flutter app once, in Chrome or as a macOS window. Skip the Android emulator and iOS simulator if you can; each one costs 2 GB or more.
-- The Next.js dashboard is optional. Leave it off unless you're showing it.
+- Leave the Next.js dashboard off unless you're showing it.
 
 Lean start, three terminals:
 
