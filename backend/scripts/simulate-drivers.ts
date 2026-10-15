@@ -51,13 +51,16 @@ async function main() {
     const { token, user } = await call(null, 'POST', '/auth/login', { phone: phone(i) });
     if (user.role !== 'driver') throw new Error(`${phone(i)} is not a seeded driver. Run npm run seed first.`);
     const job = await call(token, 'GET', '/drivers/me/job');
-    // Scatter around Lang'ata/Karen, where the app's default map centre is.
-    const start = { lat: -1.355 + (Math.random() - 0.5) * 0.06, lng: 36.755 + (Math.random() - 0.5) * 0.07 };
+    // Scatter around Lang'ata/Karen — same centre as the Flutter demo pin.
+    // Keep the radius tight (~3 km) so GPS users in Ruai/Eastlands still see
+    // trucks after the app snaps the pin back to the demo fleet.
+    const start = { lat: -1.358 + (Math.random() - 0.5) * 0.035, lng: 36.748 + (Math.random() - 0.5) * 0.04 };
     sims.push({ token, name: user.name, home: start, pos: start, target: start, wait: 0 });
     await call(token, 'POST', '/drivers/me/location', start);
-    if (!job.booking) await call(token, 'POST', '/drivers/me/status', { status: 'available' }).catch(() => {});
+    // Always re-publish available when idle so a previous race/demo can't leave the GEO set empty.
+    if (!job.booking) await call(token, 'POST', '/drivers/me/status', { status: 'available' });
   }
-  console.log(`simulating ${sims.length} drivers against ${API}`);
+  console.log(`simulating ${sims.length} drivers around Lang'ata/Karen against ${API}`);
 
   setInterval(() => {
     for (const s of sims) tick(s).catch((e) => console.error(s.name, e.message));
