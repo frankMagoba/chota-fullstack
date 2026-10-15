@@ -3,6 +3,7 @@ dist/
 .next/
 build/
 .dart_tool/
+.demo/
 .env
 .env.local
 *.log

@@ -1,5 +1,5 @@
 # Default path is lean: Postgres + Redis in Docker, API with node.
-.PHONY: db api up up-docker down reset logs test simulate race web app app-macos
+.PHONY: db api up up-docker down reset logs test simulate race web app app-macos demo stop
 
 db:            ## Postgres + Redis only (capped memory)
 	docker compose up -d postgres redis
@@ -9,6 +9,14 @@ api: db        ## Migrate, seed and run the API with node on :4000
 	cd backend && npm install --no-audit --no-fund && npm run migrate && npm run seed && npm run dev
 
 up: api
+
+demo:          ## One command: DB + API + simulator + Flutter in Chrome
+	@chmod +x scripts/start-demo.sh scripts/stop-demo.sh
+	./scripts/start-demo.sh
+
+stop:          ## Stop API / simulator / web started by make demo
+	@chmod +x scripts/stop-demo.sh
+	./scripts/stop-demo.sh
 
 up-docker:     ## Everything in Docker, API included
 	docker compose --profile api up -d --build
@@ -32,7 +40,7 @@ race:          ## 25 simultaneous bookings against the running API
 web:           ## Optional ops dashboard on :3001
 	cd web && npm install --no-audit --no-fund && npm run dev -- -p 3001
 
-app:           ## Flutter app in Chrome
+app:           ## Flutter app in Chrome (needs API already running: make api)
 	cd mobile && flutter pub get && flutter run -d chrome
 
 app-macos:     ## Flutter app as a macOS window (needs Xcode)
