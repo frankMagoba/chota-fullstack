@@ -18,13 +18,21 @@ It's a sanitized example, safe to share on screen. There's no real customer or d
 Needs Docker, Node 20+ and Flutter 3.35+.
 
 ```bash
+make demo        # one command: DB + API + truck simulator + Flutter in Chrome
+# WITH_WEB=1 make demo   # also starts the ops dashboard on :3001
+make stop        # stop API / simulator / web (leaves Docker DB running)
+```
+
+Or split across terminals:
+
+```bash
 make api         # Postgres + Redis in Docker, then migrate, seed and run the API on :4000
 make simulate    # second terminal: trucks drive around Lang'ata/Karen
-make app         # third terminal: the Flutter app in Chrome
+make app         # third terminal: the Flutter app in Chrome (needs the API up)
 make web         # optional: ops dashboard on :3001
 ```
 
-Sign in on the app with the prefilled demo number (`+254711000001`). The ops dashboard uses `+254700000001`. OTP is stubbed for the demo. `make up-docker` runs the API in a container instead.
+Sign in on the app with the prefilled demo number (`+254711000001`). The ops dashboard uses `+254700000001`. OTP is stubbed for the demo. If login fails with a connection error, the API is not running — use `make demo` or start `make api` first. `make up-docker` runs the API in a container instead.
 
 If ports 5432 or 6379 are taken by a local Postgres or Redis, use `PG_PORT=5433 REDIS_PORT=6380 make db` and set `DATABASE_URL`/`REDIS_URL` in `backend/.env` to match.
 
@@ -38,12 +46,10 @@ The default commands are already the lean path. In numbers:
 - Run the Flutter app once, in Chrome or as a macOS window. Skip the Android emulator and iOS simulator if you can; each one costs 2 GB or more.
 - Leave the Next.js dashboard off unless you're showing it.
 
-Lean start, three terminals:
+Lean start:
 
 ```bash
-make api
-make simulate
-make app
+make demo
 ```
 
 Close Docker Desktop's other containers first, and set Docker Desktop's memory limit to 2 GB (Settings > Resources). That's plenty for this stack.
