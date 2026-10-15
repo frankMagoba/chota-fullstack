@@ -28,7 +28,16 @@ class Api {
   Future<Map<String, dynamic>> _send(String method, String path, {Object? body, Map<String, String>? headers}) async {
     final req = http.Request(method, Uri.parse('${AppConfig.apiUrl}$path'))..headers.addAll({..._headers, ...?headers});
     if (body != null) req.body = jsonEncode(body);
-    final res = await http.Response.fromStream(await _http.send(req).timeout(const Duration(seconds: 15)));
+    late final http.Response res;
+    try {
+      res = await http.Response.fromStream(await _http.send(req).timeout(const Duration(seconds: 15)));
+    } on Exception catch (e) {
+      throw ApiException(
+        0,
+        'API_UNREACHABLE',
+        'Cannot reach API at ${AppConfig.apiUrl}. Start it with `make demo` (or `make api` in another terminal). ($e)',
+      );
+    }
     final data = res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode >= 400) {
       throw ApiException(
